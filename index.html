@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Fediverse フォロー一覧 JSON取得ツール</title>
+  <title>Fediverse フォローリスト 取得ツール</title>
   <style>
     body { font-family: sans-serif; max-width: 800px; margin: 2rem auto; padding: 0 1rem; color: #333; }
     .form-group { margin-bottom: 1rem; }
@@ -29,24 +29,23 @@
   </style>
 </head>
 <body>
-  <h2>Fediverse フォロー一覧 JSON取得ツール</h2>
 
   <div class="form-group">
     <label for="platform">プラットフォーム</label>
     <select id="platform">
-      <option value="misskey">Misskey (または Calckey / Firefish)</option>
       <option value="mastodon">Mastodon</option>
+      <option value="misskey">Misskey</option>
     </select>
   </div>
 
   <div class="form-group">
-    <label for="server">サーバーのドメイン (例: misskey.io または mastodon.social)</label>
+    <label for="server">インスタンス</label>
     <input type="text" id="server" placeholder="misskey.io" autocomplete="off">
   </div>
 
   <div class="form-group">
-    <label for="username">取得対象のユーザー名 (例: a または a@misskey.io)</label>
-    <input type="text" id="username" placeholder="空欄の場合はトークン所有者自身の情報を取得" autocomplete="off">
+    <label for="username">ユーザー名</label>
+    <input type="text" id="username" placeholder="user" autocomplete="off">
   </div>
 
   <div class="form-group">
@@ -56,14 +55,14 @@
   </div>
 
   <div class="btn-group">
-    <button id="fetchBtn">フォロー一覧を取得</button>
+    <button id="fetchBtn">フォローリストを取得</button>
     <button id="cancelBtn" class="btn-danger" style="display:none;">キャンセル</button>
   </div>
 
   <div class="progress-bar-outer" id="progressBarOuter"><div class="progress-bar-inner" id="progressBarInner"></div></div>
   <div id="status"></div>
 
-  <textarea id="output" readonly placeholder="ここにJSONデータが出力されます"></textarea>
+  <textarea id="output" readonly placeholder=""></textarea>
 
   <div class="btn-group">
     <button id="copyBtn" style="display:none;">JSONをコピー</button>
