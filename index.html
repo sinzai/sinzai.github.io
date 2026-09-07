@@ -9,17 +9,28 @@
     .form-group { margin-bottom: 1rem; }
     label { display: block; margin-bottom: .3rem; font-weight: bold; }
     input, select, button, textarea { width: 100%; padding: 0.6rem; box-sizing: border-box; border-radius: 4px; border: 1px solid #ccc; }
+    small.hint { display: block; margin-top: .3rem; color: #777; font-weight: normal; }
     button { background: #0066cc; color: #fff; border: none; cursor: pointer; font-size: 1rem; font-weight: bold; margin-top: 0.5rem; }
     button:hover { background: #004b99; }
+    button:disabled { background: #99b3cc; cursor: not-allowed; }
     button.btn-success { background: #28a745; }
     button.btn-success:hover { background: #218838; }
-    .btn-group { display: flex; gap: 10px; margin-top: 0.5rem; }
+    button.btn-danger { background: #dc3545; }
+    button.btn-danger:hover { background: #b02a37; }
+    button.btn-secondary { background: #6c757d; }
+    button.btn-secondary:hover { background: #565e64; }
+    .btn-group { display: flex; gap: 10px; margin-top: 0.5rem; flex-wrap: wrap; }
+    .btn-group > * { flex: 1; min-width: 140px; }
     textarea { height: 300px; margin-top: 1rem; font-family: monospace; font-size: 0.9rem; background: #f8f9fa; }
+    #status { margin-top: 0.8rem; font-size: 0.9rem; color: #555; min-height: 1.2em; }
+    #status.error { color: #b02a37; font-weight: bold; }
+    .progress-bar-outer { display:none; height: 6px; background:#e9ecef; border-radius:3px; margin-top:0.4rem; overflow:hidden; }
+    .progress-bar-inner { height:100%; width:0%; background:#0066cc; transition: width .2s ease; }
   </style>
 </head>
 <body>
   <h2>Fediverse フォロー一覧 JSON取得ツール</h2>
-  
+
   <div class="form-group">
     <label for="platform">プラットフォーム</label>
     <select id="platform">
@@ -30,26 +41,34 @@
 
   <div class="form-group">
     <label for="server">サーバーのドメイン (例: misskey.io または mastodon.social)</label>
-    <input type="text" id="server" placeholder="misskey.io">
+    <input type="text" id="server" placeholder="misskey.io" autocomplete="off">
   </div>
 
   <div class="form-group">
     <label for="username">取得対象のユーザー名 (例: a または a@misskey.io)</label>
-    <input type="text" id="username" placeholder="空欄の場合はトークン所有者自身の情報を取得">
+    <input type="text" id="username" placeholder="空欄の場合はトークン所有者自身の情報を取得" autocomplete="off">
   </div>
 
   <div class="form-group">
-    <label for="token">アクセストークン (※非公開アカウント取得時、またはMastodon制限回避用)</label>
-    <input type="password" id="token" placeholder="アクセストークンを入力">
+    <label for="token">アクセストークン (※非公開アカウント取得時、またはAPI制限回避用)</label>
+    <input type="password" id="token" placeholder="アクセストークンを入力" autocomplete="off">
+    <small class="hint">トークンはこの端末からサーバーへ直接送信されるのみで、どこにも保存・送信されません。</small>
   </div>
 
-  <button id="fetchBtn">フォロー一覧を取得</button>
+  <div class="btn-group">
+    <button id="fetchBtn">フォロー一覧を取得</button>
+    <button id="cancelBtn" class="btn-danger" style="display:none;">キャンセル</button>
+  </div>
+
+  <div class="progress-bar-outer" id="progressBarOuter"><div class="progress-bar-inner" id="progressBarInner"></div></div>
+  <div id="status"></div>
 
   <textarea id="output" readonly placeholder="ここにJSONデータが出力されます"></textarea>
-  
+
   <div class="btn-group">
     <button id="copyBtn" style="display:none;">JSONをコピー</button>
     <button id="downloadBtn" class="btn-success" style="display:none;">.json ファイルをダウンロード</button>
+    <button id="downloadCsvBtn" class="btn-secondary" style="display:none;">.csv ファイルをダウンロード</button>
   </div>
 
   <script src="app.js"></script>
