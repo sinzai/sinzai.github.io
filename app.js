@@ -2,6 +2,7 @@ document.getElementById('fetchBtn').addEventListener('click', async () => {
   const platform = document.getElementById('platform').value;
   let server = document.getElementById('server').value.trim().replace(/^https?:\/\//, '').replace(/\/$/, '');
   const token = document.getElementById('token').value.trim();
+  const targetUser = document.getElementById('username').value.trim();
   const output = document.getElementById('output');
   const copyBtn = document.getElementById('copyBtn');
   const downloadBtn = document.getElementById('downloadBtn');
@@ -18,9 +19,9 @@ document.getElementById('fetchBtn').addEventListener('click', async () => {
   try {
     let follows = [];
     if (platform === 'misskey') {
-      follows = await fetchMisskeyFollows(server, token);
+      follows = await fetchMisskeyFollows(server, token, targetUser);
     } else {
-      follows = await fetchMastodonFollows(server, token);
+      follows = await fetchMastodonFollows(server, token, targetUser);
     }
 
     if (follows.length === 0) {
@@ -28,7 +29,6 @@ document.getElementById('fetchBtn').addEventListener('click', async () => {
       return;
     }
 
-    // パターンA: JSON配列形式で整形して出力
     output.value = JSON.stringify(follows, null, 2);
     
     copyBtn.style.display = 'block';
@@ -39,15 +39,31 @@ document.getElementById('fetchBtn').addEventListener('click', async () => {
 });
 
 // Misskey用API処理
-async function fetchMisskeyFollows(server, token) {
+async function fetchMisskeyFollows(server, token, targetUser) {
   let follows = [];
   let untilId = null;
   let hasMore = true;
+
+  let username = null;
+  let host = null;
+  if (targetUser) {
+    const cleanUser = targetUser.replace(/^@/, '');
+    const parts = cleanUser.split('@');
+    username = parts[0];
+    if (parts.length > 1) {
+      host = parts[1];
+    }
+  }
 
   while (hasMore) {
     const bodyData = { limit: 100 };
     if (token) bodyData.i = token;
     if (untilId) bodyData.untilId = untilId;
+
+    if (username) {
+      bodyData.username = username;
+      if (host) bodyData.host = host;
+    }
 
     const res = await fetch(`https://${server}/api/users/following`, {
       method: 'POST',
@@ -63,8 +79,8 @@ async function fetchMisskeyFollows(server, token) {
     } else {
       for (const item of data) {
         const u = item.followee;
-        const host = u.host || server;
-        follows.push(`@${u.username}@${host}`);
+        const uHost = u.host || server;
+        follows.push(`@${u.username}@${uHost}`);
       }
       untilId = data[data.length - 1].id;
     }
@@ -73,18 +89,27 @@ async function fetchMisskeyFollows(server, token) {
 }
 
 // Mastodon用API処理
-async function fetchMastodonFollows(server, token) {
+async function fetchMastodonFollows(server, token, targetUser) {
   const headers = {};
   if (token) headers['Authorization'] = `Bearer ${token}`;
 
-  // 1. アカウントIDの取得
-  const verifyRes = await fetch(`https://${server}/api/v1/accounts/verify_credentials`, { headers });
-  if (!verifyRes.ok) throw new Error('アクセストークンの検証に失敗しました。');
-  const me = await verifyRes.json();
+  let accountId = null;
 
-  // 2. フォロー一覧を取得
+  if (targetUser) {
+    const cleanUser = targetUser.replace(/^@/, '');
+    const lookupRes = await fetch(`https://${server}/api/v1/accounts/lookup?acct=${encodeURIComponent(cleanUser)}`, { headers });
+    if (!lookupRes.ok) throw new Error('指定されたユーザーが見つかりませんでした。');
+    const targetAccount = await lookupRes.json();
+    accountId = targetAccount.id;
+  } else {
+    const verifyRes = await fetch(`https://${server}/api/v1/accounts/verify_credentials`, { headers });
+    if (!verifyRes.ok) throw new Error('アクセストークンの検証に失敗しました。トークンを確認してください。');
+    const me = await verifyRes.json();
+    accountId = me.id;
+  }
+
   let follows = [];
-  let url = `https://${server}/api/v1/accounts/${me.id}/following?limit=80`;
+  let url = `https://${server}/api/v1/accounts/${accountId}/following?limit=80`;
 
   while (url) {
     const res = await fetch(url, { headers });
@@ -96,7 +121,6 @@ async function fetchMastodonFollows(server, token) {
       follows.push(`@${fullAcct}`);
     }
 
-    // ページネーション (Linkヘッダーの確認)
     const linkHeader = res.headers.get('Link');
     if (linkHeader && linkHeader.includes('rel="next"')) {
       const match = linkHeader.match(/<([^>]+)>;\s*rel="next"/);
