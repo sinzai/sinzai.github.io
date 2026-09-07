@@ -49,13 +49,21 @@
   </div>
 
   <div class="form-group">
+    <label for="listType">取得するリスト</label>
+    <select id="listType">
+      <option value="following">フォロー中 (Following)</option>
+      <option value="followers">フォロワー (Followers)</option>
+    </select>
+  </div>
+
+  <div class="form-group">
     <label for="token">アクセストークン (※非公開アカウント取得時、またはAPI制限回避用)</label>
     <input type="password" id="token" placeholder="アクセストークンを入力" autocomplete="off">
     <small class="hint">トークンはこの端末からサーバーへ直接送信されるのみで、どこにも保存・送信されません。</small>
   </div>
 
   <div class="btn-group">
-    <button id="fetchBtn">フォローリストを取得</button>
+    <button id="fetchBtn">リストを取得</button>
     <button id="cancelBtn" class="btn-danger" style="display:none;">キャンセル</button>
   </div>
 

@@ -14,6 +14,7 @@ const MAX_RETRIES = 3;          // 429発生時の再試行回数
 
 let currentAbortController = null;
 let lastServerLabel = 'fediverse';
+let lastListType = 'following';
 
 function sleep(ms, signal) {
   return new Promise((resolve, reject) => {
@@ -72,11 +73,14 @@ async function fetchWithRetry(url, options, signal) {
   }
 }
 
+const LIST_TYPE_LABEL = { following: 'フォロー中', followers: 'フォロワー' };
+
 fetchBtn.addEventListener('click', async () => {
   const platform = document.getElementById('platform').value;
   let server = document.getElementById('server').value.trim().replace(/^https?:\/\//, '').replace(/\/$/, '').replace(/^@/, '');
   const token = document.getElementById('token').value.trim();
   const targetUser = document.getElementById('username').value.trim();
+  const listType = document.getElementById('listType').value; // 'following' または 'followers'
 
   if (!server) {
     alert('サーバーのドメインを入力してください。');
@@ -85,6 +89,7 @@ fetchBtn.addEventListener('click', async () => {
 
   resetUI();
   lastServerLabel = server;
+  lastListType = listType;
   currentAbortController = new AbortController();
   const signal = currentAbortController.signal;
 
@@ -95,22 +100,23 @@ fetchBtn.addEventListener('click', async () => {
   try {
     let follows;
     if (platform === 'misskey') {
-      follows = await fetchMisskeyFollows(server, token, targetUser, signal);
+      follows = await fetchMisskeyList(server, token, targetUser, listType, signal);
     } else {
-      follows = await fetchMastodonFollows(server, token, targetUser, signal);
+      follows = await fetchMastodonList(server, token, targetUser, listType, signal);
     }
 
     // 重複除去 + アルファベット順ソート
     const uniqueSorted = Array.from(new Set(follows)).sort((a, b) => a.localeCompare(b));
+    const label = LIST_TYPE_LABEL[listType];
 
     if (uniqueSorted.length === 0) {
-      output.value = 'フォローが見つかりませんでした。';
+      output.value = `${label}が見つかりませんでした。`;
       setStatus('完了: 0件');
       return;
     }
 
     output.value = JSON.stringify(uniqueSorted, null, 2);
-    setStatus(`完了: ${uniqueSorted.length} 件のフォローを取得しました。`);
+    setStatus(`完了: ${label}を ${uniqueSorted.length} 件取得しました。`);
 
     copyBtn.style.display = 'block';
     downloadBtn.style.display = 'block';
@@ -139,13 +145,17 @@ cancelBtn.addEventListener('click', () => {
   }
 });
 
-// Misskey用API処理
-async function fetchMisskeyFollows(server, token, targetUser, signal) {
+// Misskey用API処理（listType: 'following' または 'followers'）
+async function fetchMisskeyList(server, token, targetUser, listType, signal) {
   let follows = [];
   let untilId = null;
   let hasMore = true;
   let userId = null;
   let page = 0;
+
+  // フォロー中は相手(followee)、フォロワーは相手(follower)のオブジェクトを見る
+  const userKey = listType === 'followers' ? 'follower' : 'followee';
+  const endpoint = listType === 'followers' ? 'followers' : 'following';
 
   if (targetUser) {
     const cleanUser = targetUser.replace(/^@/, '');
@@ -178,7 +188,7 @@ async function fetchMisskeyFollows(server, token, targetUser, signal) {
     if (untilId) bodyData.untilId = untilId;
     if (userId) bodyData.userId = userId;
 
-    const res = await fetchWithRetry(`https://${server}/api/users/following`, {
+    const res = await fetchWithRetry(`https://${server}/api/users/${endpoint}`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(bodyData)
@@ -196,7 +206,7 @@ async function fetchMisskeyFollows(server, token, targetUser, signal) {
       hasMore = false;
     } else {
       for (const item of data) {
-        const u = item.followee || item.follower;
+        const u = item[userKey] || item.followee || item.follower;
         if (u) {
           const uHost = u.host || server;
           follows.push(`@${u.username}@${uHost}`);
@@ -210,11 +220,12 @@ async function fetchMisskeyFollows(server, token, targetUser, signal) {
   return follows;
 }
 
-// Mastodon用API処理
-async function fetchMastodonFollows(server, token, targetUser, signal) {
+// Mastodon用API処理（listType: 'following' または 'followers'）
+async function fetchMastodonList(server, token, targetUser, listType, signal) {
   const headers = {};
   if (token) headers['Authorization'] = `Bearer ${token}`;
 
+  const endpoint = listType === 'followers' ? 'followers' : 'following';
   let accountId = null;
 
   if (targetUser) {
@@ -232,7 +243,7 @@ async function fetchMastodonFollows(server, token, targetUser, signal) {
   }
 
   let follows = [];
-  let url = `https://${server}/api/v1/accounts/${accountId}/following?limit=80`;
+  let url = `https://${server}/api/v1/accounts/${accountId}/${endpoint}?limit=80`;
   let page = 0;
 
   while (url) {
@@ -283,7 +294,7 @@ function triggerDownload(content, mimeType, extension) {
 
   const a = document.createElement('a');
   a.href = url;
-  a.download = `follows_${lastServerLabel}_${today}.${extension}`;
+  a.download = `${lastListType}_${lastServerLabel}_${today}.${extension}`;
   a.click();
 
   URL.revokeObjectURL(url);
