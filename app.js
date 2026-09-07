@@ -38,32 +38,40 @@ document.getElementById('fetchBtn').addEventListener('click', async () => {
   }
 });
 
-// Misskey用API処理
+// Misskey用API処理 (修正版)
 async function fetchMisskeyFollows(server, token, targetUser) {
   let follows = [];
   let untilId = null;
   let hasMore = true;
+  let userId = null;
 
-  let username = null;
-  let host = null;
+  // 1. ユーザー指定がある場合、まずユーザーIDを取得する
   if (targetUser) {
     const cleanUser = targetUser.replace(/^@/, '');
     const parts = cleanUser.split('@');
-    username = parts[0];
-    if (parts.length > 1) {
-      host = parts[1];
-    }
+    const username = parts[0];
+    const host = parts[1] || null;
+
+    const userShowBody = { username, host };
+    if (token) userShowBody.i = token;
+
+    const userRes = await fetch(`https://${server}/api/users/show`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(userShowBody)
+    });
+
+    if (!userRes.ok) throw new Error('指定されたMisskeyユーザーが見つかりませんでした。');
+    const userData = await userRes.json();
+    userId = userData.id;
   }
 
+  // 2. フォロー一覧を取得
   while (hasMore) {
     const bodyData = { limit: 100 };
     if (token) bodyData.i = token;
     if (untilId) bodyData.untilId = untilId;
-
-    if (username) {
-      bodyData.username = username;
-      if (host) bodyData.host = host;
-    }
+    if (userId) bodyData.userId = userId; // IDを指定
 
     const res = await fetch(`https://${server}/api/users/following`, {
       method: 'POST',
@@ -71,16 +79,23 @@ async function fetchMisskeyFollows(server, token, targetUser) {
       body: JSON.stringify(bodyData)
     });
 
-    if (!res.ok) throw new Error(`Misskey API Error (${res.status})`);
+    if (!res.ok) {
+      if (res.status === 400) throw new Error('APIエラー: パラメータが不正か、非公開アカウントです。');
+      throw new Error(`Misskey API Error (${res.status})`);
+    }
+    
     const data = await res.json();
 
     if (data.length === 0) {
       hasMore = false;
     } else {
       for (const item of data) {
-        const u = item.followee;
-        const uHost = u.host || server;
-        follows.push(`@${u.username}@${uHost}`);
+        // フォロー対象のユーザーオブジェクトを取得
+        const u = item.followee || item.follower;
+        if (u) {
+          const uHost = u.host || server;
+          follows.push(`@${u.username}@${uHost}`);
+        }
       }
       untilId = data[data.length - 1].id;
     }
