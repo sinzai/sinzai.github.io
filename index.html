@@ -34,7 +34,12 @@
   </div>
 
   <div class="form-group">
-    <label for="token">アクセストークン (※公開アカウントでMastodonの場合は空欄可)</label>
+    <label for="username">取得対象のユーザー名 (例: a または a@misskey.io)</label>
+    <input type="text" id="username" placeholder="空欄の場合はトークン所有者自身の情報を取得">
+  </div>
+
+  <div class="form-group">
+    <label for="token">アクセストークン (※非公開アカウント取得時、またはMastodon制限回避用)</label>
     <input type="password" id="token" placeholder="アクセストークンを入力">
   </div>
 
