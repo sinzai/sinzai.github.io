@@ -1,6 +1,5 @@
 const fetchBtn = document.getElementById('fetchBtn');
 const cancelBtn = document.getElementById('cancelBtn');
-const copyBtn = document.getElementById('copyBtn');
 const downloadBtn = document.getElementById('downloadBtn');
 const downloadCsvBtn = document.getElementById('downloadCsvBtn');
 const output = document.getElementById('output');
@@ -42,7 +41,6 @@ function setProgress(count) {
 }
 
 function resetUI() {
-  copyBtn.style.display = 'none';
   downloadBtn.style.display = 'none';
   downloadCsvBtn.style.display = 'none';
   progressBarOuter.style.display = 'none';
@@ -118,7 +116,6 @@ fetchBtn.addEventListener('click', async () => {
     output.value = JSON.stringify(uniqueSorted, null, 2);
     setStatus(`完了: ${label}を ${uniqueSorted.length} 件取得しました。`);
 
-    copyBtn.style.display = 'block';
     downloadBtn.style.display = 'block';
     downloadCsvBtn.style.display = 'block';
   } catch (err) {
@@ -209,7 +206,7 @@ async function fetchMisskeyList(server, token, targetUser, listType, signal) {
         const u = item[userKey] || item.followee || item.follower;
         if (u) {
           const uHost = u.host || server;
-          follows.push(`@${u.username}@${uHost}`);
+          follows.push(`${u.username}@${uHost}`);
         }
       }
       untilId = data[data.length - 1].id;
@@ -261,7 +258,7 @@ async function fetchMastodonList(server, token, targetUser, listType, signal) {
 
     for (const u of data) {
       const fullAcct = u.acct.includes('@') ? u.acct : `${u.acct}@${server}`;
-      follows.push(`@${fullAcct}`);
+      follows.push(fullAcct);
     }
     setProgress(follows.length);
 
@@ -277,14 +274,6 @@ async function fetchMastodonList(server, token, targetUser, listType, signal) {
   }
   return follows;
 }
-
-// クリップボードへコピー
-copyBtn.addEventListener('click', () => {
-  output.select();
-  navigator.clipboard.writeText(output.value)
-    .then(() => setStatus('JSONテキストをクリップボードにコピーしました。'))
-    .catch(() => alert('コピーに失敗しました。'));
-});
 
 function triggerDownload(content, mimeType, extension) {
   const blob = new Blob([content], { type: mimeType });
@@ -305,12 +294,13 @@ downloadBtn.addEventListener('click', () => {
   triggerDownload(output.value, 'application/json', 'json');
 });
 
-// CSVファイルのダウンロード
+// CSVファイルのダウンロード（先頭の@は除去）
 downloadCsvBtn.addEventListener('click', () => {
   try {
     const list = JSON.parse(output.value);
     if (!Array.isArray(list)) throw new Error('not an array');
-    const csv = ['acct'].concat(list).map(row => `"${String(row).replace(/"/g, '""')}"`).join('\n');
+    const cleaned = list.map(row => String(row).replace(/^@/, ''));
+    const csv = ['acct'].concat(cleaned).map(row => `"${row.replace(/"/g, '""')}"`).join('\n');
     triggerDownload(csv, 'text/csv', 'csv');
   } catch (e) {
     alert('CSVへの変換に失敗しました。');
