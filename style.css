@@ -1,0 +1,263 @@
+/*
+  Fediverse リスト取得ツール — stylesheet
+  ------------------------------------------------------------
+  コンセプト: 「連合(federation)」というフェディバースの構造そのものを
+  背景の結節点パターンと、接続を示す左辺のアクセントラインで表現。
+  データを扱うツールであることを意識し、見出し・操作系は Space Grotesk、
+  ドメイン名やトークン、出力(JSON/CSV)などデータに関わる要素は
+  JetBrains Mono で統一し、情報の種類を書体で区別している。
+*/
+
+@import url('https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap');
+
+:root {
+  --bg: #100c1c;
+  --bg-grid-dot: #241d3d;
+  --surface: #17132a;
+  --surface-raised: #1e1836;
+  --border: #322a52;
+  --border-soft: #241f3c;
+
+  --text: #ece8f8;
+  --text-muted: #948db3;
+  --text-faint: #635c82;
+
+  --accent: #9d7bff;
+  --accent-strong: #7c4dff;
+  --accent-soft: rgba(157, 123, 255, 0.14);
+
+  --success: #35d4a0;
+  --success-strong: #21a67c;
+  --danger: #ff6b81;
+  --danger-strong: #e14d64;
+  --neutral: #7b83a6;
+  --neutral-strong: #5f6690;
+
+  --radius: 7px;
+  --font-display: 'Space Grotesk', system-ui, sans-serif;
+  --font-mono: 'JetBrains Mono', 'SFMono-Regular', Consolas, monospace;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  * {
+    animation-duration: 0.001ms !important;
+    transition-duration: 0.001ms !important;
+  }
+}
+
+* { box-sizing: border-box; }
+
+body {
+  margin: 0;
+  padding: 3rem 1.25rem 4rem;
+  background-color: var(--bg);
+  background-image:
+    radial-gradient(var(--bg-grid-dot) 1px, transparent 1px);
+  background-size: 28px 28px;
+  color: var(--text);
+  font-family: var(--font-display);
+  line-height: 1.5;
+  -webkit-font-smoothing: antialiased;
+}
+
+.app-shell {
+  max-width: 620px;
+  margin: 0 auto;
+}
+
+/* ---------- Header : a small node graph stands in for the hero ---------- */
+
+.app-header {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  margin-bottom: 1.75rem;
+}
+
+.federation-mark {
+  flex: none;
+  width: 46px;
+  height: 46px;
+}
+
+.app-header h1 {
+  margin: 0;
+  font-size: 1.28rem;
+  font-weight: 600;
+  letter-spacing: -0.01em;
+  color: var(--text);
+}
+
+.app-header p {
+  margin: 0.2rem 0 0;
+  font-size: 0.87rem;
+  color: var(--text-muted);
+}
+
+/* ---------- Card ---------- */
+
+.card {
+  background: var(--surface);
+  border: 1px solid var(--border-soft);
+  border-left: 3px solid var(--accent-strong);
+  border-radius: var(--radius);
+  padding: 1.75rem 1.75rem 1.5rem;
+}
+
+.field-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 1rem;
+}
+
+@media (max-width: 480px) {
+  .field-row { grid-template-columns: 1fr; }
+}
+
+.form-group {
+  margin-bottom: 1.15rem;
+}
+
+label {
+  display: block;
+  margin-bottom: 0.4rem;
+  font-size: 0.83rem;
+  font-weight: 600;
+  color: var(--text);
+}
+
+small.hint {
+  display: block;
+  margin-top: 0.4rem;
+  font-size: 0.76rem;
+  color: var(--text-faint);
+  font-weight: 400;
+  line-height: 1.45;
+}
+
+/* ---------- Inputs ---------- */
+
+input, select, textarea {
+  width: 100%;
+  padding: 0.62rem 0.7rem;
+  background: var(--surface-raised);
+  border: 1px solid var(--border);
+  border-radius: 5px;
+  color: var(--text);
+  font-family: var(--font-mono);
+  font-size: 0.88rem;
+}
+
+select {
+  font-family: var(--font-display);
+  font-weight: 500;
+  appearance: none;
+  background-image: linear-gradient(45deg, transparent 50%, var(--text-muted) 50%),
+                     linear-gradient(135deg, var(--text-muted) 50%, transparent 50%);
+  background-position: calc(100% - 18px) center, calc(100% - 13px) center;
+  background-size: 5px 5px, 5px 5px;
+  background-repeat: no-repeat;
+}
+
+input::placeholder { color: var(--text-faint); }
+
+input:focus, select:focus, textarea:focus {
+  outline: none;
+  border-color: var(--accent);
+  box-shadow: 0 0 0 3px var(--accent-soft);
+}
+
+input:focus-visible, select:focus-visible, button:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+}
+
+/* ---------- Buttons ---------- */
+
+button {
+  width: 100%;
+  padding: 0.68rem 1rem;
+  margin-top: 0.4rem;
+  border: none;
+  border-radius: 5px;
+  background: var(--accent-strong);
+  color: #fff;
+  font-family: var(--font-display);
+  font-size: 0.92rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background-color 0.15s ease;
+}
+
+button:hover { background: var(--accent); }
+
+button:disabled {
+  background: var(--surface-raised);
+  color: var(--text-faint);
+  cursor: not-allowed;
+}
+
+button.btn-success { background: var(--success-strong); }
+button.btn-success:hover { background: var(--success); }
+
+button.btn-danger { background: var(--danger-strong); }
+button.btn-danger:hover { background: var(--danger); }
+
+button.btn-secondary { background: var(--neutral-strong); }
+button.btn-secondary:hover { background: var(--neutral); }
+
+.btn-group {
+  display: flex;
+  gap: 0.6rem;
+  margin-top: 0.3rem;
+  flex-wrap: wrap;
+}
+
+.btn-group > * {
+  flex: 1;
+  min-width: 140px;
+  margin-top: 0;
+}
+
+/* ---------- Status & progress ---------- */
+
+#status {
+  margin-top: 0.9rem;
+  font-family: var(--font-mono);
+  font-size: 0.82rem;
+  color: var(--text-muted);
+  min-height: 1.2em;
+}
+
+#status.error { color: var(--danger); font-weight: 600; }
+
+.progress-bar-outer {
+  display: none;
+  height: 5px;
+  background: var(--surface-raised);
+  border-radius: 3px;
+  margin-top: 0.5rem;
+  overflow: hidden;
+}
+
+.progress-bar-inner {
+  height: 100%;
+  width: 0%;
+  background: linear-gradient(90deg, var(--accent-strong), var(--accent));
+  transition: width 0.2s ease;
+}
+
+/* ---------- Output ---------- */
+
+textarea#output {
+  height: 300px;
+  margin-top: 1.1rem;
+  resize: vertical;
+  background: #0c0a16;
+  border-color: var(--border);
+  color: #c9c2ea;
+  font-size: 0.82rem;
+  line-height: 1.55;
+}
+
+textarea#output::placeholder { color: var(--text-faint); }

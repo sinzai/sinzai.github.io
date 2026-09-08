@@ -1,0 +1,86 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Fediverse リスト取得ツール</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <div class="app-shell">
+
+    <header class="app-header">
+      <svg class="federation-mark" viewBox="0 0 46 46" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+        <circle cx="23" cy="8" r="4" fill="none" stroke="#9d7bff" stroke-width="1.6"/>
+        <circle cx="8" cy="34" r="4" fill="none" stroke="#7c4dff" stroke-width="1.6"/>
+        <circle cx="38" cy="34" r="4" fill="#9d7bff"/>
+        <line x1="23" y1="12" x2="10" y2="30.5" stroke="#4a3d78" stroke-width="1.4"/>
+        <line x1="23" y1="12" x2="36" y2="30.5" stroke="#4a3d78" stroke-width="1.4"/>
+        <line x1="12" y1="34" x2="34" y2="34" stroke="#4a3d78" stroke-width="1.4"/>
+      </svg>
+      <div>
+        <h1>Fediverse リスト取得ツール</h1>
+        <p>Mastodon / Misskey のフォロー・フォロワーを取得してJSON/CSVで書き出します</p>
+      </div>
+    </header>
+
+    <div class="card">
+
+      <div class="field-row">
+        <div class="form-group">
+          <label for="platform">プラットフォーム</label>
+          <select id="platform">
+            <option value="mastodon">Mastodon</option>
+            <option value="misskey">Misskey</option>
+          </select>
+        </div>
+
+        <div class="form-group">
+          <label for="listType">取得するリスト</label>
+          <select id="listType">
+            <option value="following">フォロー中 (Following)</option>
+            <option value="followers">フォロワー (Followers)</option>
+          </select>
+        </div>
+      </div>
+
+      <div class="field-row">
+        <div class="form-group">
+          <label for="server">インスタンス</label>
+          <input type="text" id="server" placeholder="mastodon.social" autocomplete="off">
+        </div>
+
+        <div class="form-group">
+          <label for="username">ユーザー名</label>
+          <input type="text" id="username" placeholder="user" autocomplete="off">
+        </div>
+      </div>
+
+      <div class="form-group">
+        <label for="token">アクセストークン</label>
+        <input type="password" id="token" placeholder="" autocomplete="off">
+        <small class="hint">トークンはこの端末からサーバーへ直接送信されるのみで、どこにも保存・送信されません。</small>
+      </div>
+
+      <div class="btn-group">
+        <button id="fetchBtn">リストを取得</button>
+        <button id="cancelBtn" class="btn-danger" style="display:none;">キャンセル</button>
+      </div>
+
+      <div class="progress-bar-outer" id="progressBarOuter"><div class="progress-bar-inner" id="progressBarInner"></div></div>
+      <div id="status"></div>
+
+      <textarea id="output" readonly placeholder=""></textarea>
+
+      <div class="btn-group">
+        <button id="copyBtn" style="display:none;">JSONをコピー</button>
+        <button id="downloadBtn" class="btn-success" style="display:none;">.json ファイルをダウンロード</button>
+        <button id="downloadCsvBtn" class="btn-secondary" style="display:none;">.csv ファイルをダウンロード</button>
+      </div>
+
+    </div>
+  </div>
+
+  <script src="app.js"></script>
+</body>
+</html>
