@@ -37,7 +37,7 @@ function setProgress(count) {
   progressBarOuter.style.display = 'block';
   const pct = Math.min(95, Math.log2(count + 1) * 12);
   progressBarInner.style.width = pct + '%';
-  setStatus(`[FETCHING] Count: ${count} entries loaded...`);
+  setStatus(`[取得中] 現在 ${count} 件読み込み済み...`);
 }
 
 function resetUI() {
@@ -66,7 +66,7 @@ async function fetchWithRetry(url, options, signal) {
     if (attempt > MAX_RETRIES) return res;
     const retryAfterHeader = res.headers.get('Retry-After');
     const waitMs = retryAfterHeader ? Number(retryAfterHeader) * 1000 : 1500 * attempt;
-    setStatus(`[WARN] Rate limit hit. Retrying in ${Math.ceil(waitMs / 1000)}s (${attempt}/${MAX_RETRIES})...`, true);
+    setStatus(`[警告] レート制限を検知。${Math.ceil(waitMs / 1000)}秒待機して再試行中 (${attempt}/${MAX_RETRIES})...`, true);
     await sleep(waitMs, signal);
   }
 }
@@ -79,7 +79,7 @@ fetchBtn.addEventListener('click', async () => {
   const listType = document.getElementById('listType').value;
 
   if (!server) {
-    alert('[ERROR] Target Instance Host is required.');
+    alert('[エラー] インスタンスホスト名を入力してください。');
     return;
   }
 
@@ -91,7 +91,7 @@ fetchBtn.addEventListener('click', async () => {
 
   fetchBtn.disabled = true;
   cancelBtn.style.display = 'block';
-  setStatus('[INIT] Initializing fetch sequence...');
+  setStatus('[初期化] 取得シーケンスを開始します...');
 
   try {
     let follows;
@@ -104,24 +104,24 @@ fetchBtn.addEventListener('click', async () => {
     const uniqueSorted = Array.from(new Set(follows)).sort((a, b) => a.localeCompare(b));
 
     if (uniqueSorted.length === 0) {
-      output.value = `// [RESULT]: No ${listType} records found.`;
-      setStatus('[SUCCESS] Fetch completed (0 records).');
+      output.value = `// [結果]: 対象の ${listType} レコードは見つかりませんでした。`;
+      setStatus('[完了] 取得処理が完了しました (0件)。');
       return;
     }
 
     output.value = JSON.stringify(uniqueSorted, null, 2);
-    setStatus(`[SUCCESS] Extracted ${uniqueSorted.length} entries.`);
+    setStatus(`[成功] 合計 ${uniqueSorted.length} 件のエントリを抽出しました。`);
 
     copyBtn.style.display = 'inline-block';
     downloadBtn.style.display = 'inline-block';
     downloadCsvBtn.style.display = 'inline-block';
   } catch (err) {
     if (err.name === 'AbortError') {
-      setStatus('[ABORTED] Operation canceled by user.', true);
-      output.value = '// Process terminated.';
+      setStatus('[中断] ユーザーによって処理がキャンセルされました。', true);
+      output.value = '// 処理が中断されました。';
     } else {
-      setStatus(`[ERROR] ${err.message}`, true);
-      output.value = `// Exception caught:\n${err.message}`;
+      setStatus(`[エラー] ${err.message}`, true);
+      output.value = `// 例外が発生しました:\n${err.message}`;
     }
   } finally {
     finishUI();
@@ -154,14 +154,14 @@ async function fetchMisskeyList(server, token, targetUser, listType, signal) {
       body: JSON.stringify(userShowBody)
     }, signal);
 
-    if (!userRes.ok) throw new Error('Target Misskey user not found.');
+    if (!userRes.ok) throw new Error('指定されたMisskeyユーザーが見つかりませんでした。');
     const userData = await userRes.json();
     userId = userData.id;
   }
 
   while (hasMore) {
     page++;
-    if (page > MAX_PAGES) throw new Error('Maximum page threshold exceeded.');
+    if (page > MAX_PAGES) throw new Error('最大ページ数の制限を超過しました。');
 
     const bodyData = { limit: 100 };
     if (token) bodyData.i = token;
@@ -174,7 +174,7 @@ async function fetchMisskeyList(server, token, targetUser, listType, signal) {
       body: JSON.stringify(bodyData)
     }, signal);
 
-    if (!res.ok) throw new Error(`Misskey API Exception (${res.status})`);
+    if (!res.ok) throw new Error(`Misskey APIエラー (${res.status})`);
     const data = await res.json();
 
     if (data.length === 0) {
@@ -204,13 +204,13 @@ async function fetchMastodonList(server, token, targetUser, listType, signal) {
   if (targetUser) {
     const cleanUser = targetUser.replace(/^@/, '');
     const lookupRes = await fetchWithRetry(`https://${server}/api/v1/accounts/lookup?acct=${encodeURIComponent(cleanUser)}`, { headers }, signal);
-    if (!lookupRes.ok) throw new Error('Target account lookup failed.');
+    if (!lookupRes.ok) throw new Error('指定されたユーザーの検索に失敗しました。');
     const targetAccount = await lookupRes.json();
     accountId = targetAccount.id;
   } else {
-    if (!token) throw new Error('Access token required for own account fetch.');
+    if (!token) throw new Error('ユーザー名未入力の場合、アクセストークンが必要です。');
     const verifyRes = await fetchWithRetry(`https://${server}/api/v1/accounts/verify_credentials`, { headers }, signal);
-    if (!verifyRes.ok) throw new Error('Invalid credentials.');
+    if (!verifyRes.ok) throw new Error('アクセストークンの認証に失敗しました。');
     const me = await verifyRes.json();
     accountId = me.id;
   }
@@ -221,10 +221,10 @@ async function fetchMastodonList(server, token, targetUser, listType, signal) {
 
   while (url) {
     page++;
-    if (page > MAX_PAGES) throw new Error('Maximum page threshold exceeded.');
+    if (page > MAX_PAGES) throw new Error('最大ページ数の制限を超過しました。');
 
     const res = await fetchWithRetry(url, { headers }, signal);
-    if (!res.ok) throw new Error(`Mastodon API Exception (${res.status})`);
+    if (!res.ok) throw new Error(`Mastodon APIエラー (${res.status})`);
     const data = await res.json();
 
     for (const u of data) {
@@ -264,7 +264,7 @@ downloadCsvBtn.addEventListener('click', () => {
     const csv = ['acct'].concat(cleaned).map(row => `"${row.replace(/"/g, '""')}"`).join('\n');
     triggerDownload(csv, 'text/csv', 'csv');
   } catch (e) {
-    alert('[ERROR] CSV conversion failed.');
+    alert('[エラー] CSV変換処理に失敗しました。');
   }
 });
 
@@ -272,14 +272,14 @@ copyBtn.addEventListener('click', async () => {
   try {
     await navigator.clipboard.writeText(output.value);
     const original = copyBtn.textContent;
-    copyBtn.textContent = '[COPIED_TO_CLIPBOARD]';
+    copyBtn.textContent = '[クリップボードにコピー完了]';
     setTimeout(() => { copyBtn.textContent = original; }, 1500);
   } catch (e) {
-    alert('[ERROR] Clipboard write failed.');
+    alert('[エラー] クリップボード書き込みに失敗しました。');
   }
 });
 
-// PWA Logic & Service Worker Registration
+// PWA & Service Worker 登録ロジック
 const offlineBanner = document.getElementById('offlineBanner');
 const pwaStatus = document.getElementById('pwaStatus');
 const pwaInstallBtn = document.getElementById('pwaInstallBtn');
@@ -291,7 +291,7 @@ window.addEventListener('offline', () => { if (offlineBanner) offlineBanner.hidd
 if ('serviceWorker' in navigator) {
   window.addEventListener('load', () => {
     navigator.serviceWorker.register('/sw.js').then(() => {
-      if (pwaStatus) pwaStatus.textContent = 'SYSTEM: ONLINE (SERVICE_WORKER_ACTIVE)';
+      if (pwaStatus) pwaStatus.textContent = 'ステータス: オンライン (ServiceWorker有効)';
     });
   });
 }

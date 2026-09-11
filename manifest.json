@@ -1,7 +1,7 @@
 {
-  "name": "Fediverse List Extractor",
+  "name": "Fediverse リスト抽出ツール",
   "short_name": "FediExtract",
-  "description": "Terminal-style PWA tool to extract Mastodon/Misskey followers and following graphs.",
+  "description": "Mastodon/Misskeyのフォロー・フォロワーリストを抽出するターミナル風PWAツール",
   "start_url": "/",
   "id": "/",
   "scope": "/",

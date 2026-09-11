@@ -1,5 +1,5 @@
 /*
-  Fediverse List Extractor — Hacker Terminal Theme
+  Fediverse リスト抽出ツール — ハッカーターミナルUI
 */
 
 @import url('https://fonts.googleapis.com/css2?family=Fira+Code:wght@400;500;700&display=swap');
@@ -46,7 +46,7 @@ body {
   line-height: 1.4;
 }
 
-/* CRT Scanlines */
+/* CRT 走査線エフェクト */
 .scanlines {
   position: fixed;
   top: 0; left: 0; width: 100vw; height: 100vh;
@@ -65,7 +65,7 @@ body {
   margin: 0 auto;
 }
 
-/* Header */
+/* ヘッダー */
 
 .app-header {
   margin-bottom: 1.5rem;
@@ -105,7 +105,7 @@ body {
   color: var(--text-muted);
 }
 
-/* Terminal Window */
+/* ターミナルウィンドウ */
 
 .terminal-window {
   background: var(--surface);
@@ -143,7 +143,7 @@ body {
 
 .window-body { padding: 1.2rem; }
 
-/* Form Elements */
+/* フォーム構造 */
 
 .field-row {
   display: grid;
@@ -191,7 +191,7 @@ input:focus, select:focus, textarea:focus {
   color: #fff;
 }
 
-/* Buttons */
+/* ボタン群 */
 
 button {
   width: 100%;
@@ -203,7 +203,6 @@ button {
   font-size: 0.85rem;
   font-weight: 700;
   cursor: pointer;
-  text-transform: uppercase;
   transition: all 0.2s ease;
   border-radius: 2px;
 }
@@ -244,7 +243,7 @@ button.btn-secondary:hover {
   margin-top: 0.5rem;
 }
 
-/* Output & Status */
+/* 出力とプログレス */
 
 textarea#output {
   height: 240px;
@@ -278,7 +277,7 @@ textarea#output {
   box-shadow: 0 0 8px var(--cyan);
 }
 
-/* PWA Footer */
+/* フッター */
 
 .app-footer {
   margin-top: 1.5rem;
