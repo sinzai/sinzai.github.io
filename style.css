@@ -1,14 +1,12 @@
 /*
-  Fediverse List Extractor — Hacker / Terminal Theme
-  ------------------------------------------------------------
-  Matrix Green (#00ff66) & Cyber Cyan (#00f0ff) High-Contrast Accent
+  Fediverse List Extractor — Hacker Terminal Theme
 */
 
 @import url('https://fonts.googleapis.com/css2?family=Fira+Code:wght@400;500;700&display=swap');
 
 :root {
   --bg: #050805;
-  --surface: rgba(10, 20, 10, 0.85);
+  --surface: rgba(10, 20, 10, 0.88);
   --surface-raised: #0a120a;
   --border: #00ff66;
   --border-dim: #1a5e32;
@@ -29,13 +27,9 @@
   --safe-right: env(safe-area-inset-right, 0px);
 }
 
-* {
-  box-sizing: border-box;
-}
+* { box-sizing: border-box; }
 
-html {
-  background-color: var(--bg);
-}
+html { background-color: var(--bg); }
 
 body {
   margin: 0;
@@ -71,7 +65,7 @@ body {
   margin: 0 auto;
 }
 
-/* ---------- Header ---------- */
+/* Header */
 
 .app-header {
   margin-bottom: 1.5rem;
@@ -111,7 +105,7 @@ body {
   color: var(--text-muted);
 }
 
-/* ---------- Terminal Window ---------- */
+/* Terminal Window */
 
 .terminal-window {
   background: var(--surface);
@@ -147,11 +141,9 @@ body {
   color: var(--text-muted);
 }
 
-.window-body {
-  padding: 1.2rem;
-}
+.window-body { padding: 1.2rem; }
 
-/* ---------- Form Controls ---------- */
+/* Form Elements */
 
 .field-row {
   display: grid;
@@ -199,12 +191,7 @@ input:focus, select:focus, textarea:focus {
   color: #fff;
 }
 
-select {
-  cursor: pointer;
-  background-color: var(--surface-raised);
-}
-
-/* ---------- Buttons ---------- */
+/* Buttons */
 
 button {
   width: 100%;
@@ -257,7 +244,7 @@ button.btn-secondary:hover {
   margin-top: 0.5rem;
 }
 
-/* ---------- Output Area ---------- */
+/* Output & Status */
 
 textarea#output {
   height: 240px;
@@ -266,10 +253,7 @@ textarea#output {
   border-color: var(--border-dim);
   color: var(--text);
   font-size: 0.8rem;
-  scrollbar-color: var(--border-dim) #000;
 }
-
-/* Status & Progress */
 
 #status {
   margin-top: 0.6rem;
