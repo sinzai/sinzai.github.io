@@ -79,7 +79,7 @@ fetchBtn.addEventListener('click', async () => {
   const listType = document.getElementById('listType').value;
 
   if (!server) {
-    alert('[エラー] インスタンスホスト名を入力してください。');
+    alert('[エラー] 入力内容に不備があります。');
     return;
   }
 
