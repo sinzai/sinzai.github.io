@@ -3,100 +3,112 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
-  <title>Fediverse リスト取得ツール</title>
-  <meta name="description" content="Mastodon / Misskey のフォロー中・フォロワーリストを取得してJSON/CSVで書き出すツール">
+  <title>Fediverse List Extractor // Terminal v2.0</title>
+  <meta name="description" content="Mastodon / Misskey のフォロー中・フォロワーリストを抽出するハッカー風CLIインターフェース">
 
-  <!-- PWA -->
-  <link rel="manifest" href="/manifest.webmanifest">
-  <meta name="theme-color" content="#0a0714">
-  <meta name="color-scheme" content="dark">
-  <link rel="icon" href="/icons/icon-192.png" type="image/png">
+  <!-- Favicons -->
+  <link rel="icon" href="/favicon.ico" sizes="any">
+  <link rel="icon" href="/favicon.svg" type="image/svg+xml">
+  <link rel="icon" href="/icons/icon-192.png" type="image/png" sizes="192x192">
   <link rel="apple-touch-icon" href="/icons/apple-touch-icon.png">
+
+  <!-- PWA Manifest & Theme -->
+  <link rel="manifest" href="/manifest.json">
+  <meta name="theme-color" content="#050805">
+  <meta name="color-scheme" content="dark">
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-  <meta name="apple-mobile-web-app-title" content="Fedi List">
+  <meta name="apple-mobile-web-app-title" content="FediExtract">
   <meta name="mobile-web-app-capable" content="yes">
 
   <link rel="stylesheet" href="style.css">
 </head>
 <body>
+  <!-- CRT Scanline Effect Overlay -->
+  <div class="scanlines"></div>
+
   <div class="app-shell">
 
     <header class="app-header">
-      <svg class="federation-mark" viewBox="0 0 46 46" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
-        <circle cx="23" cy="8" r="4" fill="none" stroke="#9d7bff" stroke-width="1.6"/>
-        <circle cx="8" cy="34" r="4" fill="none" stroke="#7c4dff" stroke-width="1.6"/>
-        <circle cx="38" cy="34" r="4" fill="#9d7bff"/>
-        <line x1="23" y1="12" x2="10" y2="30.5" stroke="#4a3d78" stroke-width="1.4"/>
-        <line x1="23" y1="12" x2="36" y2="30.5" stroke="#4a3d78" stroke-width="1.4"/>
-        <line x1="12" y1="34" x2="34" y2="34" stroke="#4a3d78" stroke-width="1.4"/>
-      </svg>
-      <div>
-        <h1>Fediverse リスト取得ツール</h1>
-        <p class="app-subtitle">Mastodon / Misskey のフォロー関係をエクスポート</p>
+      <div class="terminal-prompt">
+        <span class="prompt-user">root@fediverse</span>:<span class="prompt-path">~#</span> <span class="blink-cursor">_</span>
       </div>
+      <h1>FEDI_LIST_EXTRACTOR</h1>
+      <p class="app-subtitle">[SYSTEM]: Target Fediverse network node & extract relationship graphs.</p>
     </header>
 
-    <div id="offlineBanner" class="offline-banner" hidden>オフラインです。表示中の内容はキャッシュされたものです。</div>
+    <div id="offlineBanner" class="offline-banner" hidden>
+      [WARNING]: Offline mode detected. Running on cached local shell.
+    </div>
 
-    <div class="card">
+    <div class="card terminal-window">
+      <div class="window-header">
+        <span class="dot red"></span>
+        <span class="dot yellow"></span>
+        <span class="dot green"></span>
+        <span class="window-title">bash - 80x24</span>
+      </div>
 
-      <div class="field-row">
-        <div class="form-group">
-          <label for="platform">プラットフォーム</label>
-          <select id="platform">
-            <option value="mastodon">Mastodon</option>
-            <option value="misskey">Misskey</option>
-          </select>
+      <div class="window-body">
+        <div class="field-row">
+          <div class="form-group">
+            <label for="platform">> PLATFORM_TYPE</label>
+            <select id="platform">
+              <option value="mastodon">Mastodon Protocol</option>
+              <option value="misskey">Misskey Protocol</option>
+            </select>
+          </div>
+
+          <div class="form-group">
+            <label for="listType">> TARGET_RELATION</label>
+            <select id="listType">
+              <option value="following">Following [outbound]</option>
+              <option value="followers">Followers [inbound]</option>
+            </select>
+          </div>
+        </div>
+
+        <div class="field-row">
+          <div class="form-group">
+            <label for="server">> INSTANCE_HOST</label>
+            <input type="text" id="server" placeholder="mastodon.social" autocomplete="off" spellcheck="false" inputmode="url">
+          </div>
+
+          <div class="form-group">
+            <label for="username">> TARGET_USER</label>
+            <input type="text" id="username" placeholder="username" autocomplete="off" spellcheck="false">
+          </div>
         </div>
 
         <div class="form-group">
-          <label for="listType">取得するリスト</label>
-          <select id="listType">
-            <option value="following">フォロー中 (Following)</option>
-            <option value="followers">フォロワー (Followers)</option>
-          </select>
-        </div>
-      </div>
-
-      <div class="field-row">
-        <div class="form-group">
-          <label for="server">インスタンス</label>
-          <input type="text" id="server" placeholder="mastodon.social" autocomplete="off" inputmode="url">
+          <label for="token">> ACCESS_TOKEN [OPTIONAL]</label>
+          <input type="password" id="token" placeholder="••••••••••••••••" autocomplete="off" spellcheck="false">
+          <small class="hint">// Token remains strictly client-side. Zero telemetry transmission.</small>
         </div>
 
-        <div class="form-group">
-          <label for="username">ユーザー名</label>
-          <input type="text" id="username" placeholder="user" autocomplete="off">
+        <div class="btn-group">
+          <button id="fetchBtn" class="btn-primary">[EXECUTE_FETCH]</button>
+          <button id="cancelBtn" class="btn-danger" style="display:none;">[ABORT_PROCESS]</button>
         </div>
-      </div>
 
-      <div class="form-group">
-        <label for="token">アクセストークン</label>
-        <input type="password" id="token" placeholder="" autocomplete="off">
-        <small class="hint">トークンはこの端末からサーバーへ直接送信されるのみで、どこにも保存・送信されません。</small>
-      </div>
+        <div class="progress-bar-outer" id="progressBarOuter">
+          <div class="progress-bar-inner" id="progressBarInner"></div>
+        </div>
+        <div id="status"></div>
 
-      <div class="btn-group">
-        <button id="fetchBtn">リストを取得</button>
-        <button id="cancelBtn" class="btn-danger" style="display:none;">キャンセル</button>
-      </div>
+        <textarea id="output" readonly spellcheck="false" placeholder="// Extracted output stream will display here..."></textarea>
 
-      <div class="progress-bar-outer" id="progressBarOuter"><div class="progress-bar-inner" id="progressBarInner"></div></div>
-      <div id="status"></div>
-
-      <textarea id="output" readonly placeholder=""></textarea>
-
-      <div class="btn-group">
-        <button id="copyBtn" style="display:none;">JSONをコピー</button>
-        <button id="downloadBtn" class="btn-success" style="display:none;">.json ファイルをダウンロード</button>
-        <button id="downloadCsvBtn" class="btn-secondary" style="display:none;">.csv ファイルをダウンロード</button>
+        <div class="btn-group">
+          <button id="copyBtn" style="display:none;">[COPY_JSON]</button>
+          <button id="downloadBtn" class="btn-success" style="display:none;">[EXPORT_JSON]</button>
+          <button id="downloadCsvBtn" class="btn-secondary" style="display:none;">[EXPORT_CSV]</button>
+        </div>
       </div>
 
     </div>
 
     <footer class="app-footer">
-      <span id="pwaStatus"></span>
+      <span id="pwaStatus">STATUS: READY</span> | <button id="pwaInstallBtn" class="pwa-install-btn" style="display:none;">[INSTALL_PWA_APP]</button>
     </footer>
   </div>
 
