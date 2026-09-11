@@ -132,7 +132,6 @@ cancelBtn.addEventListener('click', () => {
   if (currentAbortController) currentAbortController.abort();
 });
 
-// Misskey API Integration
 async function fetchMisskeyList(server, token, targetUser, listType, signal) {
   let follows = [];
   let untilId = null;
@@ -195,7 +194,6 @@ async function fetchMisskeyList(server, token, targetUser, listType, signal) {
   return follows;
 }
 
-// Mastodon API Integration
 async function fetchMastodonList(server, token, targetUser, listType, signal) {
   const headers = {};
   if (token) headers['Authorization'] = `Bearer ${token}`;
@@ -281,7 +279,7 @@ copyBtn.addEventListener('click', async () => {
   }
 });
 
-// PWA Support & Install Event Prompt
+// PWA Logic & Service Worker Registration
 const offlineBanner = document.getElementById('offlineBanner');
 const pwaStatus = document.getElementById('pwaStatus');
 const pwaInstallBtn = document.getElementById('pwaInstallBtn');
