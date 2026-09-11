@@ -8,9 +8,9 @@ const statusEl = document.getElementById('status');
 const progressBarOuter = document.getElementById('progressBarOuter');
 const progressBarInner = document.getElementById('progressBarInner');
 
-const REQUEST_DELAY_MS = 250;   // ページ間の待機（レート制限対策）
-const MAX_PAGES = 2000;         // 無限ループ防止用の安全上限
-const MAX_RETRIES = 3;          // 429発生時の再試行回数
+const REQUEST_DELAY_MS = 250;
+const MAX_PAGES = 2000;
+const MAX_RETRIES = 3;
 
 let currentAbortController = null;
 let lastServerLabel = 'fediverse';
@@ -35,10 +35,9 @@ function setStatus(text, isError = false) {
 
 function setProgress(count) {
   progressBarOuter.style.display = 'block';
-  // 総数が不明なので、対数的に伸びる疑似プログレスバーにする
   const pct = Math.min(95, Math.log2(count + 1) * 12);
   progressBarInner.style.width = pct + '%';
-  setStatus(`取得中... 現在 ${count} 件取得済み`);
+  setStatus(`[FETCHING] Count: ${count} entries loaded...`);
 }
 
 function resetUI() {
@@ -58,32 +57,29 @@ function finishUI() {
   currentAbortController = null;
 }
 
-// fetchをラップし、429（レート制限）発生時は待機して自動リトライする
 async function fetchWithRetry(url, options, signal) {
   let attempt = 0;
   while (true) {
     const res = await fetch(url, { ...options, signal });
     if (res.status !== 429) return res;
     attempt++;
-    if (attempt > MAX_RETRIES) return res; // これ以上は諦めて呼び出し元にエラー処理を任せる
+    if (attempt > MAX_RETRIES) return res;
     const retryAfterHeader = res.headers.get('Retry-After');
     const waitMs = retryAfterHeader ? Number(retryAfterHeader) * 1000 : 1500 * attempt;
-    setStatus(`レート制限を検知しました。${Math.ceil(waitMs / 1000)}秒待機して再試行します (${attempt}/${MAX_RETRIES})...`);
+    setStatus(`[WARN] Rate limit hit. Retrying in ${Math.ceil(waitMs / 1000)}s (${attempt}/${MAX_RETRIES})...`, true);
     await sleep(waitMs, signal);
   }
 }
-
-const LIST_TYPE_LABEL = { following: 'フォロー中', followers: 'フォロワー' };
 
 fetchBtn.addEventListener('click', async () => {
   const platform = document.getElementById('platform').value;
   let server = document.getElementById('server').value.trim().replace(/^https?:\/\//, '').replace(/\/$/, '').replace(/^@/, '');
   const token = document.getElementById('token').value.trim();
   const targetUser = document.getElementById('username').value.trim();
-  const listType = document.getElementById('listType').value; // 'following' または 'followers'
+  const listType = document.getElementById('listType').value;
 
   if (!server) {
-    alert('入力内容に不備があります。');
+    alert('[ERROR] Target Instance Host is required.');
     return;
   }
 
@@ -95,7 +91,7 @@ fetchBtn.addEventListener('click', async () => {
 
   fetchBtn.disabled = true;
   cancelBtn.style.display = 'block';
-  setStatus('取得を開始しています...');
+  setStatus('[INIT] Initializing fetch sequence...');
 
   try {
     let follows;
@@ -105,34 +101,27 @@ fetchBtn.addEventListener('click', async () => {
       follows = await fetchMastodonList(server, token, targetUser, listType, signal);
     }
 
-    // 重複除去 + アルファベット順ソート
     const uniqueSorted = Array.from(new Set(follows)).sort((a, b) => a.localeCompare(b));
-    const label = LIST_TYPE_LABEL[listType];
 
     if (uniqueSorted.length === 0) {
-      output.value = `${label}が見つかりませんでした。`;
-      setStatus('完了: 0件');
+      output.value = `// [RESULT]: No ${listType} records found.`;
+      setStatus('[SUCCESS] Fetch completed (0 records).');
       return;
     }
 
     output.value = JSON.stringify(uniqueSorted, null, 2);
-    setStatus(`完了: ${label}を ${uniqueSorted.length} 件取得しました。`);
+    setStatus(`[SUCCESS] Extracted ${uniqueSorted.length} entries.`);
 
-    copyBtn.style.display = 'block';
-    downloadBtn.style.display = 'block';
-    downloadCsvBtn.style.display = 'block';
+    copyBtn.style.display = 'inline-block';
+    downloadBtn.style.display = 'inline-block';
+    downloadCsvBtn.style.display = 'inline-block';
   } catch (err) {
     if (err.name === 'AbortError') {
-      setStatus('ユーザーによりキャンセルされました。', true);
-      output.value = output.value || 'キャンセルされました。';
-    } else if (err instanceof TypeError) {
-      // fetch自体が失敗する典型パターン: CORS制限 or ネットワークエラー
-      setStatus('通信エラーが発生しました。', true);
-      output.value = `エラーが発生しました:\n${err.message}\n\n` +
-        'サーバー側のCORS設定によりブラウザから直接アクセスできない場合や、ドメイン名の誤り、ネットワーク接続の問題が考えられます。';
+      setStatus('[ABORTED] Operation canceled by user.', true);
+      output.value = '// Process terminated.';
     } else {
-      setStatus('エラーが発生しました。', true);
-      output.value = `エラーが発生しました:\n${err.message}`;
+      setStatus(`[ERROR] ${err.message}`, true);
+      output.value = `// Exception caught:\n${err.message}`;
     }
   } finally {
     finishUI();
@@ -140,12 +129,10 @@ fetchBtn.addEventListener('click', async () => {
 });
 
 cancelBtn.addEventListener('click', () => {
-  if (currentAbortController) {
-    currentAbortController.abort();
-  }
+  if (currentAbortController) currentAbortController.abort();
 });
 
-// Misskey用API処理（listType: 'following' または 'followers'）
+// Misskey API Integration
 async function fetchMisskeyList(server, token, targetUser, listType, signal) {
   let follows = [];
   let untilId = null;
@@ -153,17 +140,13 @@ async function fetchMisskeyList(server, token, targetUser, listType, signal) {
   let userId = null;
   let page = 0;
 
-  // フォロー中は相手(followee)、フォロワーは相手(follower)のオブジェクトを見る
   const userKey = listType === 'followers' ? 'follower' : 'followee';
   const endpoint = listType === 'followers' ? 'followers' : 'following';
 
   if (targetUser) {
     const cleanUser = targetUser.replace(/^@/, '');
     const parts = cleanUser.split('@');
-    const username = parts[0];
-    const host = parts[1] || null;
-
-    const userShowBody = { username, host };
+    const userShowBody = { username: parts[0], host: parts[1] || null };
     if (token) userShowBody.i = token;
 
     const userRes = await fetchWithRetry(`https://${server}/api/users/show`, {
@@ -172,16 +155,14 @@ async function fetchMisskeyList(server, token, targetUser, listType, signal) {
       body: JSON.stringify(userShowBody)
     }, signal);
 
-    if (!userRes.ok) throw new Error('指定されたMisskeyユーザーが見つかりませんでした。');
+    if (!userRes.ok) throw new Error('Target Misskey user not found.');
     const userData = await userRes.json();
     userId = userData.id;
   }
 
   while (hasMore) {
     page++;
-    if (page > MAX_PAGES) {
-      throw new Error(`取得ページ数が上限(${MAX_PAGES})に達しました。処理を中断します。`);
-    }
+    if (page > MAX_PAGES) throw new Error('Maximum page threshold exceeded.');
 
     const bodyData = { limit: 100 };
     if (token) bodyData.i = token;
@@ -194,12 +175,7 @@ async function fetchMisskeyList(server, token, targetUser, listType, signal) {
       body: JSON.stringify(bodyData)
     }, signal);
 
-    if (!res.ok) {
-      if (res.status === 400) throw new Error('APIエラー: パラメータが不正か、非公開アカウントです。');
-      if (res.status === 429) throw new Error('レート制限が解除されませんでした。しばらく待ってから再度お試しください。');
-      throw new Error(`Misskey API Error (${res.status})`);
-    }
-
+    if (!res.ok) throw new Error(`Misskey API Exception (${res.status})`);
     const data = await res.json();
 
     if (data.length === 0) {
@@ -208,8 +184,7 @@ async function fetchMisskeyList(server, token, targetUser, listType, signal) {
       for (const item of data) {
         const u = item[userKey] || item.followee || item.follower;
         if (u) {
-          const uHost = u.host || server;
-          follows.push(`${u.username}@${uHost}`);
+          follows.push(`${u.username}@${u.host || server}`);
         }
       }
       untilId = data[data.length - 1].id;
@@ -220,7 +195,7 @@ async function fetchMisskeyList(server, token, targetUser, listType, signal) {
   return follows;
 }
 
-// Mastodon用API処理（listType: 'following' または 'followers'）
+// Mastodon API Integration
 async function fetchMastodonList(server, token, targetUser, listType, signal) {
   const headers = {};
   if (token) headers['Authorization'] = `Bearer ${token}`;
@@ -231,13 +206,13 @@ async function fetchMastodonList(server, token, targetUser, listType, signal) {
   if (targetUser) {
     const cleanUser = targetUser.replace(/^@/, '');
     const lookupRes = await fetchWithRetry(`https://${server}/api/v1/accounts/lookup?acct=${encodeURIComponent(cleanUser)}`, { headers }, signal);
-    if (!lookupRes.ok) throw new Error('指定されたユーザーが見つかりませんでした。');
+    if (!lookupRes.ok) throw new Error('Target account lookup failed.');
     const targetAccount = await lookupRes.json();
     accountId = targetAccount.id;
   } else {
-    if (!token) throw new Error('ユーザー名が未入力の場合、自分自身の情報を取得するためにアクセストークンが必要です。');
+    if (!token) throw new Error('Access token required for own account fetch.');
     const verifyRes = await fetchWithRetry(`https://${server}/api/v1/accounts/verify_credentials`, { headers }, signal);
-    if (!verifyRes.ok) throw new Error('アクセストークンの検証に失敗しました。トークンを確認してください。');
+    if (!verifyRes.ok) throw new Error('Invalid credentials.');
     const me = await verifyRes.json();
     accountId = me.id;
   }
@@ -248,20 +223,14 @@ async function fetchMastodonList(server, token, targetUser, listType, signal) {
 
   while (url) {
     page++;
-    if (page > MAX_PAGES) {
-      throw new Error(`取得ページ数が上限(${MAX_PAGES})に達しました。処理を中断します。`);
-    }
+    if (page > MAX_PAGES) throw new Error('Maximum page threshold exceeded.');
 
     const res = await fetchWithRetry(url, { headers }, signal);
-    if (!res.ok) {
-      if (res.status === 429) throw new Error('レート制限が解除されませんでした。しばらく待ってから再度お試しください。');
-      throw new Error(`Mastodon API Error (${res.status})`);
-    }
+    if (!res.ok) throw new Error(`Mastodon API Exception (${res.status})`);
     const data = await res.json();
 
     for (const u of data) {
-      const fullAcct = u.acct.includes('@') ? u.acct : `${u.acct}@${server}`;
-      follows.push(fullAcct);
+      follows.push(u.acct.includes('@') ? u.acct : `${u.acct}@${server}`);
     }
     setProgress(follows.length);
 
@@ -281,80 +250,63 @@ async function fetchMastodonList(server, token, targetUser, listType, signal) {
 function triggerDownload(content, mimeType, extension) {
   const blob = new Blob([content], { type: mimeType });
   const url = URL.createObjectURL(blob);
-
   const today = new Date().toISOString().slice(0, 10);
-
   const a = document.createElement('a');
   a.href = url;
   a.download = `${lastListType}_${lastServerLabel}_${today}.${extension}`;
   a.click();
-
   URL.revokeObjectURL(url);
 }
 
-// JSONファイルのダウンロード
-downloadBtn.addEventListener('click', () => {
-  triggerDownload(output.value, 'application/json', 'json');
-});
-
-// CSVファイルのダウンロード（先頭の@は除去）
+downloadBtn.addEventListener('click', () => triggerDownload(output.value, 'application/json', 'json'));
 downloadCsvBtn.addEventListener('click', () => {
   try {
     const list = JSON.parse(output.value);
-    if (!Array.isArray(list)) throw new Error('not an array');
     const cleaned = list.map(row => String(row).replace(/^@/, ''));
     const csv = ['acct'].concat(cleaned).map(row => `"${row.replace(/"/g, '""')}"`).join('\n');
     triggerDownload(csv, 'text/csv', 'csv');
   } catch (e) {
-    alert('CSVへの変換に失敗しました。');
+    alert('[ERROR] CSV conversion failed.');
   }
 });
 
-// JSON結果をクリップボードへコピー
 copyBtn.addEventListener('click', async () => {
   try {
     await navigator.clipboard.writeText(output.value);
     const original = copyBtn.textContent;
-    copyBtn.textContent = 'コピーしました ✓';
+    copyBtn.textContent = '[COPIED_TO_CLIPBOARD]';
     setTimeout(() => { copyBtn.textContent = original; }, 1500);
   } catch (e) {
-    alert('クリップボードへのコピーに失敗しました。');
+    alert('[ERROR] Clipboard write failed.');
   }
 });
 
-// ---------------------------------------------------------------
-// PWA: Service Worker登録 + オフライン状態の表示
-// ネットワークファースト戦略は sw.js 側で実装しており、
-// ここでは登録とオンライン/オフラインのUI反映のみを行う。
-// ---------------------------------------------------------------
+// PWA Support & Install Event Prompt
 const offlineBanner = document.getElementById('offlineBanner');
 const pwaStatus = document.getElementById('pwaStatus');
+const pwaInstallBtn = document.getElementById('pwaInstallBtn');
+let deferredPrompt = null;
 
-function updateOnlineStatus() {
-  if (offlineBanner) offlineBanner.hidden = navigator.onLine;
-}
-window.addEventListener('online', updateOnlineStatus);
-window.addEventListener('offline', updateOnlineStatus);
-updateOnlineStatus();
+window.addEventListener('online', () => { if (offlineBanner) offlineBanner.hidden = true; });
+window.addEventListener('offline', () => { if (offlineBanner) offlineBanner.hidden = false; });
 
 if ('serviceWorker' in navigator) {
   window.addEventListener('load', () => {
-    navigator.serviceWorker.register('/sw.js')
-      .then((reg) => {
-        if (pwaStatus) pwaStatus.textContent = 'オフライン対応: 有効';
-        // 新しいバージョンが見つかったら即座に反映されるようにする
-        reg.addEventListener('updatefound', () => {
-          const newWorker = reg.installing;
-          if (!newWorker) return;
-          newWorker.addEventListener('statechange', () => {
-            if (newWorker.state === 'activated') {
-              // 次回アクセス時に最新版が使われる
-            }
-          });
-        });
-      })
-      .catch(() => {
-        if (pwaStatus) pwaStatus.textContent = '';
-      });
+    navigator.serviceWorker.register('/sw.js').then(() => {
+      if (pwaStatus) pwaStatus.textContent = 'SYSTEM: ONLINE (SERVICE_WORKER_ACTIVE)';
+    });
   });
 }
+
+window.addEventListener('beforeinstallprompt', (e) => {
+  e.preventDefault();
+  deferredPrompt = e;
+  if (pwaInstallBtn) {
+    pwaInstallBtn.style.display = 'inline-block';
+    pwaInstallBtn.addEventListener('click', () => {
+      pwaInstallBtn.style.display = 'none';
+      deferredPrompt.prompt();
+      deferredPrompt.userChoice.then(() => { deferredPrompt = null; });
+    });
+  }
+});
