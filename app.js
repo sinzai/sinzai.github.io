@@ -272,10 +272,10 @@ copyBtn.addEventListener('click', async () => {
   try {
     await navigator.clipboard.writeText(output.value);
     const original = copyBtn.textContent;
-    copyBtn.textContent = '[クリップボードにコピー完了]';
+    copyBtn.textContent = '[コピー完了!]';
     setTimeout(() => { copyBtn.textContent = original; }, 1500);
   } catch (e) {
-    alert('[エラー] クリップボード書き込みに失敗しました。');
+    alert('[エラー] 書き込みに失敗しました。');
   }
 });
 
@@ -291,7 +291,7 @@ window.addEventListener('offline', () => { if (offlineBanner) offlineBanner.hidd
 if ('serviceWorker' in navigator) {
   window.addEventListener('load', () => {
     navigator.serviceWorker.register('/sw.js').then(() => {
-      if (pwaStatus) pwaStatus.textContent = 'ステータス: オンライン (ServiceWorker有効)';
+      if (pwaStatus) pwaStatus.textContent = '© 神罪閣下製作委員会';
     });
   });
 }
