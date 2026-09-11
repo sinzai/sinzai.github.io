@@ -2,8 +2,21 @@
 <html lang="ja">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
   <title>Fediverse リスト取得ツール</title>
+  <meta name="description" content="Mastodon / Misskey のフォロー中・フォロワーリストを取得してJSON/CSVで書き出すツール">
+
+  <!-- PWA -->
+  <link rel="manifest" href="/manifest.webmanifest">
+  <meta name="theme-color" content="#0a0714">
+  <meta name="color-scheme" content="dark">
+  <link rel="icon" href="/icons/icon-192.png" type="image/png">
+  <link rel="apple-touch-icon" href="/icons/apple-touch-icon.png">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="apple-mobile-web-app-title" content="Fedi List">
+  <meta name="mobile-web-app-capable" content="yes">
+
   <link rel="stylesheet" href="style.css">
 </head>
 <body>
@@ -20,8 +33,11 @@
       </svg>
       <div>
         <h1>Fediverse リスト取得ツール</h1>
+        <p class="app-subtitle">Mastodon / Misskey のフォロー関係をエクスポート</p>
       </div>
     </header>
+
+    <div id="offlineBanner" class="offline-banner" hidden>オフラインです。表示中の内容はキャッシュされたものです。</div>
 
     <div class="card">
 
@@ -46,7 +62,7 @@
       <div class="field-row">
         <div class="form-group">
           <label for="server">インスタンス</label>
-          <input type="text" id="server" placeholder="mastodon.social" autocomplete="off">
+          <input type="text" id="server" placeholder="mastodon.social" autocomplete="off" inputmode="url">
         </div>
 
         <div class="form-group">
@@ -78,6 +94,10 @@
       </div>
 
     </div>
+
+    <footer class="app-footer">
+      <span id="pwaStatus"></span>
+    </footer>
   </div>
 
   <script src="app.js"></script>

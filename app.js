@@ -1,5 +1,6 @@
 const fetchBtn = document.getElementById('fetchBtn');
 const cancelBtn = document.getElementById('cancelBtn');
+const copyBtn = document.getElementById('copyBtn');
 const downloadBtn = document.getElementById('downloadBtn');
 const downloadCsvBtn = document.getElementById('downloadCsvBtn');
 const output = document.getElementById('output');
@@ -41,6 +42,7 @@ function setProgress(count) {
 }
 
 function resetUI() {
+  copyBtn.style.display = 'none';
   downloadBtn.style.display = 'none';
   downloadCsvBtn.style.display = 'none';
   progressBarOuter.style.display = 'none';
@@ -116,6 +118,7 @@ fetchBtn.addEventListener('click', async () => {
     output.value = JSON.stringify(uniqueSorted, null, 2);
     setStatus(`完了: ${label}を ${uniqueSorted.length} 件取得しました。`);
 
+    copyBtn.style.display = 'block';
     downloadBtn.style.display = 'block';
     downloadCsvBtn.style.display = 'block';
   } catch (err) {
@@ -306,3 +309,52 @@ downloadCsvBtn.addEventListener('click', () => {
     alert('CSVへの変換に失敗しました。');
   }
 });
+
+// JSON結果をクリップボードへコピー
+copyBtn.addEventListener('click', async () => {
+  try {
+    await navigator.clipboard.writeText(output.value);
+    const original = copyBtn.textContent;
+    copyBtn.textContent = 'コピーしました ✓';
+    setTimeout(() => { copyBtn.textContent = original; }, 1500);
+  } catch (e) {
+    alert('クリップボードへのコピーに失敗しました。');
+  }
+});
+
+// ---------------------------------------------------------------
+// PWA: Service Worker登録 + オフライン状態の表示
+// ネットワークファースト戦略は sw.js 側で実装しており、
+// ここでは登録とオンライン/オフラインのUI反映のみを行う。
+// ---------------------------------------------------------------
+const offlineBanner = document.getElementById('offlineBanner');
+const pwaStatus = document.getElementById('pwaStatus');
+
+function updateOnlineStatus() {
+  if (offlineBanner) offlineBanner.hidden = navigator.onLine;
+}
+window.addEventListener('online', updateOnlineStatus);
+window.addEventListener('offline', updateOnlineStatus);
+updateOnlineStatus();
+
+if ('serviceWorker' in navigator) {
+  window.addEventListener('load', () => {
+    navigator.serviceWorker.register('/sw.js')
+      .then((reg) => {
+        if (pwaStatus) pwaStatus.textContent = 'オフライン対応: 有効';
+        // 新しいバージョンが見つかったら即座に反映されるようにする
+        reg.addEventListener('updatefound', () => {
+          const newWorker = reg.installing;
+          if (!newWorker) return;
+          newWorker.addEventListener('statechange', () => {
+            if (newWorker.state === 'activated') {
+              // 次回アクセス時に最新版が使われる
+            }
+          });
+        });
+      })
+      .catch(() => {
+        if (pwaStatus) pwaStatus.textContent = '';
+      });
+  });
+}
