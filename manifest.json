@@ -1,39 +1,25 @@
 {
-  "name": "Fediverse リスト取得ツール",
-  "short_name": "Fedi List",
-  "description": "Mastodon / Misskey のフォロー中・フォロワーリストを取得してJSON/CSVで書き出すツール",
-  "start_url": "/?source=pwa",
+  "name": "Fediverse List Extractor",
+  "short_name": "FediExtract",
+  "description": "Terminal-style PWA tool to extract Mastodon/Misskey followers and following graphs.",
+  "start_url": "/",
   "id": "/",
   "scope": "/",
   "display": "standalone",
-  "display_override": ["window-controls-overlay", "standalone"],
-  "orientation": "portrait-primary",
-  "background_color": "#0a0714",
-  "theme_color": "#0a0714",
+  "orientation": "any",
+  "background_color": "#050805",
+  "theme_color": "#050805",
   "lang": "ja",
-  "dir": "ltr",
-  "categories": ["utilities", "social"],
+  "categories": ["utilities", "developer", "social"],
   "icons": [
     {
-      "src": "/icons/icon-192.png",
-      "sizes": "192x192",
-      "type": "image/png",
-      "purpose": "any"
-    },
-    {
-      "src": "/icons/icon-512.png",
+      "src": "/image/icon.png",
       "sizes": "512x512",
       "type": "image/png",
       "purpose": "any"
     },
     {
-      "src": "/icons/icon-maskable-192.png",
-      "sizes": "192x192",
-      "type": "image/png",
-      "purpose": "maskable"
-    },
-    {
-      "src": "/icons/icon-maskable-512.png",
+      "src": "/image/icon.png",
       "sizes": "512x512",
       "type": "image/png",
       "purpose": "maskable"
