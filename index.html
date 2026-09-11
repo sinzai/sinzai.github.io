@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
-  <title>Fediverse リスト抽出ツール // Terminal v2.0</title>
+  <title>Fediverse リスト抽出ツール</title>
   <meta name="description" content="Mastodon / Misskey のフォロー・フォロワーリストを抽出するハッカー風CLIインターフェース">
 
   <!-- Favicons & Touch Icons -->
@@ -29,10 +29,9 @@
 
     <header class="app-header">
       <div class="terminal-prompt">
-        <span class="prompt-user">root@fediverse</span>:<span class="prompt-path">~#</span> <span class="blink-cursor">_</span>
       </div>
-      <h1>FEDIVERSE_LIST_EXTRACTOR</h1>
-      <p class="app-subtitle">[システム]: Fediverseネットワークノードに接続し関係グラフを抽出します。</p>
+      <h1>FEDIVERSE_LIST</h1>
+      <p class="app-subtitle">Fediverseネットワークノードに接続し、フォロー/フォロワー関係を抽出します。</p>
     </header>
 
     <div id="offlineBanner" class="offline-banner" hidden>
@@ -52,28 +51,28 @@
           <div class="form-group">
             <label for="platform">> プラットフォーム選択</label>
             <select id="platform">
-              <option value="mastodon">Mastodon プロトコル</option>
-              <option value="misskey">Misskey プロトコル</option>
+              <option value="mastodon">Mastodon</option>
+              <option value="misskey">Misskey</option>
             </select>
           </div>
 
           <div class="form-group">
-            <label for="listType">> 取得対象リレーション</label>
+            <label for="listType">> 取得対象</label>
             <select id="listType">
-              <option value="following">フォロー中 (Outbound)</option>
-              <option value="followers">フォロワー (Inbound)</option>
+              <option value="following">フォロー中</option>
+              <option value="followers">フォロワー</option>
             </select>
           </div>
         </div>
 
         <div class="field-row">
           <div class="form-group">
-            <label for="server">> インスタンスホスト</label>
+            <label for="server">> インスタンス</label>
             <input type="text" id="server" placeholder="mastodon.social" autocomplete="off" spellcheck="false" inputmode="url">
           </div>
 
           <div class="form-group">
-            <label for="username">> 対象ユーザー名</label>
+            <label for="username">> ユーザー名</label>
             <input type="text" id="username" placeholder="username" autocomplete="off" spellcheck="false">
           </div>
         </div>
@@ -106,7 +105,7 @@
     </div>
 
     <footer class="app-footer">
-      <span id="pwaStatus">ステータス: 初期化中</span> | <button id="pwaInstallBtn" class="pwa-install-btn" style="display:none;">[PWAアプリをインストール]</button>
+      <span id="pwaStatus">ステータス: 初期化中</span> | <button id="pwaInstallBtn" class="pwa-install-btn" style="display:none;">[アプリをインストール]</button>
     </footer>
   </div>
 
