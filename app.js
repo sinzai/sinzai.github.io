@@ -117,7 +117,7 @@ fetchBtn.addEventListener('click', async () => {
     downloadCsvBtn.style.display = 'inline-block';
   } catch (err) {
     if (err.name === 'AbortError') {
-      setStatus('[中断] ユーザーによって処理がキャンセルされました。', true);
+      setStatus('処理がキャンセルされました。', true);
     } else {
       setStatus(`[エラー] ${err.message}`, true);
     }
