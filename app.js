@@ -118,10 +118,8 @@ fetchBtn.addEventListener('click', async () => {
   } catch (err) {
     if (err.name === 'AbortError') {
       setStatus('[中断] ユーザーによって処理がキャンセルされました。', true);
-      output.value = '// 処理が中断されました。';
     } else {
       setStatus(`[エラー] ${err.message}`, true);
-      output.value = `// 例外が発生しました:\n${err.message}`;
     }
   } finally {
     finishUI();
