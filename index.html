@@ -1,0 +1,146 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+  <meta name="theme-color" content="#e8f1f0" media="(prefers-color-scheme: light)">
+  <meta name="theme-color" content="#060b12" media="(prefers-color-scheme: dark)">
+  <meta name="referrer" content="no-referrer">
+  <meta name="robots" content="noindex, nofollow">
+  <title>SecureLink - ワンクッションリンク生成</title>
+  <meta property="og:title" content="SecureLink - ワンクッションリンク生成">
+  <meta property="og:description" content="リンクを開く前に確認画面を挟むワンクッションリンクを作成します。">
+  <meta property="og:type" content="website">
+  <link rel="manifest" href="/manifest.json">
+  <link rel="icon" href="/image/favicon.png" type="image/png">
+  <link rel="apple-touch-icon" href="/image/favicon.png">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-title" content="SecureLink">
+  <link rel="stylesheet" href="/style.css">
+</head>
+<body>
+  <div class="shell">
+    <header class="topbar">
+      <a class="brand" href="/"><img src="/image/favicon.png" alt="" width="28" height="28">SecureLink</a>
+      <div class="topbar-actions">
+        <span id="offlineBadge" class="pill hidden" role="status">オフライン</span>
+        <button id="installBtn" class="btn btn-ghost btn-sm hidden" type="button">アプリとして追加</button>
+      </div>
+    </header>
+
+    <main>
+      <section class="hero">
+        <h1>リンクを開く前に、確認をひとつ。</h1>
+        <p class="lead">URLを貼るだけで、移動先を確認する画面付きのリンクに変換します。サーバーへの送信や保存はありません。</p>
+
+        <form id="shortenerForm" novalidate>
+          <div class="bar" id="bar">
+            <input type="url" id="targetUrl" placeholder="https://example.com/..." autocomplete="off" autocapitalize="off" spellcheck="false" inputmode="url" aria-label="リンク先のURL" aria-describedby="urlError" required>
+            <button type="submit" class="btn">リンクを作成</button>
+          </div>
+          <p id="urlError" class="field-error" role="alert"></p>
+        </form>
+
+        <div id="result" class="result hidden" aria-live="polite">
+          <p class="result-label">作成したリンク</p>
+          <div id="shortUrlDisplay" class="url-display"></div>
+          <p id="resultMeta" class="result-meta"></p>
+          <div class="actions">
+            <button type="button" id="copyBtn" class="btn">URLをコピー</button>
+            <a id="previewLink" class="btn btn-ghost" href="#" target="_blank" rel="noopener">確認画面を開く</a>
+          </div>
+        </div>
+      </section>
+
+      <section class="features" aria-label="用途">
+        <div><h2>ネタバレ防止</h2><p>共有する前にワンクッション挟みます。</p></div>
+        <div><h2>外部サイトへの案内</h2><p>外部サイトへ遷移することを事前に伝えられます。</p></div>
+        <div><h2>アカウント登録不要</h2><p>アカウント登録や邪魔な広告は一切ありません。</p></div>
+      </section>
+
+      <p class="note">© 神罪閣下製作委員会</p>
+    </main>
+  </div>
+
+  <script src="/pwa.js" defer></script>
+  <script>
+    (() => {
+      const form = document.getElementById('shortenerForm');
+      const input = document.getElementById('targetUrl');
+      const bar = document.getElementById('bar');
+      const errorEl = document.getElementById('urlError');
+      const resultEl = document.getElementById('result');
+      const display = document.getElementById('shortUrlDisplay');
+      const meta = document.getElementById('resultMeta');
+      const copyBtn = document.getElementById('copyBtn');
+      const previewLink = document.getElementById('previewLink');
+
+      const showError = (msg) => {
+        errorEl.textContent = msg;
+        bar.dataset.invalid = msg ? 'true' : 'false';
+        input.setAttribute('aria-invalid', msg ? 'true' : 'false');
+      };
+      // UTF-8 → URL-safe Base64（404.html のデコード仕様と互換）
+      const encode = (url) =>
+        btoa(encodeURIComponent(url)).replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '');
+
+      input.addEventListener('input', () => {
+        showError('');
+        resultEl.classList.add('hidden'); // 入力変更後に古い結果が残らないようにする
+      });
+
+      // スキーム省略（example.com）は https:// を補う
+      const normalize = (raw) => {
+        const v = raw.trim();
+        if (!v) return '';
+        return /^[a-z][a-z0-9+.-]*:/i.test(v) && !/^[^/]+:\d+(\/|$)/.test(v) ? v : `https://${v.replace(/^\/\//, '')}`;
+      };
+
+      form.addEventListener('submit', (e) => {
+        e.preventDefault();
+        const raw = normalize(input.value);
+        if (!raw) return showError('URLを入力してください。');
+        let parsed;
+        try { parsed = new URL(raw); }
+        catch (_) { return showError('URLの形式が正しくありません。https:// から始まるURLを入力してください。'); }
+        if (parsed.protocol !== 'http:' && parsed.protocol !== 'https:') {
+          return showError('http:// または https:// から始まるURLのみ使えます。');
+        }
+        if (!parsed.hostname.includes('.') && !parsed.hostname.startsWith('[')) {
+          return showError('ドメイン名が正しくありません。');
+        }
+        if (parsed.origin === window.location.origin) {
+          return showError('このサイト自身のURLは変換できません。');
+        }
+        showError('');
+        input.value = parsed.href;
+        const shortUrl = `${window.location.origin}/${encode(parsed.href)}`;
+        display.textContent = shortUrl;
+        previewLink.href = shortUrl;
+        meta.textContent = `リンク先: ${parsed.hostname} ／ ${shortUrl.length}文字`;
+        resultEl.classList.remove('hidden');
+        resultEl.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+      });
+
+      copyBtn.addEventListener('click', async () => {
+        try {
+          await navigator.clipboard.writeText(display.textContent);
+        } catch (_) {
+          const range = document.createRange();
+          range.selectNodeContents(display);
+          const sel = window.getSelection();
+          sel.removeAllRanges(); sel.addRange(range);
+          let ok = false;
+          try { ok = document.execCommand('copy'); } catch (_) {}
+          copyBtn.textContent = ok ? '✓ コピー完了！' : '選択しました。長押し／Ctrl+C でコピー';
+          setTimeout(() => (copyBtn.textContent = 'URLをコピー'), 2500);
+          return;
+        }
+        copyBtn.textContent = '✓ コピー完了！';
+        copyBtn.classList.add('copied');
+        setTimeout(() => { copyBtn.textContent = 'URLをコピー'; copyBtn.classList.remove('copied'); }, 2000);
+      });
+    })();
+  </script>
+</body>
+</html>

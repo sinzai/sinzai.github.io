@@ -1,0 +1,96 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+  <meta name="theme-color" content="#f3f5f8" media="(prefers-color-scheme: light)">
+  <meta name="theme-color" content="#090d14" media="(prefers-color-scheme: dark)">
+  <meta name="robots" content="noindex, nofollow">
+  <meta name="referrer" content="no-referrer">
+  <title></title>
+  <link rel="manifest" href="/manifest.json">
+  <link rel="icon" href="/image/favicon.png" type="image/png">
+  <link rel="apple-touch-icon" href="/image/favicon.png">
+  <link rel="stylesheet" href="/style.css">
+</head>
+<body>
+  <main class="shell narrow">
+
+    <!-- 外部サイトへの移動確認 -->
+    <section id="redirect-view" class="panel hidden">
+      <h1>外部サイトへ移動します</h1>
+      <p class="lead">移動先を確認してから進んでください。</p>
+
+      <div class="dest">
+        <p class="dest-label">移動先のサイト</p>
+        <p id="destHost" class="dest-host"></p>
+        <div id="destination" class="dest-url"></div>
+      </div>
+
+      <div id="cautionBox" class="callout warn hidden" role="alert"></div>
+      <div class="callout danger">心当たりのないリンクは絶対に開かないでください。</div>
+
+      <div class="stack">
+        <button id="proceedBtn" class="btn btn-block" type="button">このサイトへ移動</button>
+        <button id="cancelBtn" class="btn btn-ghost btn-block" type="button">移動しない</button>
+      </div>
+    </section>
+
+    <!-- 404 -->
+    <section id="notfound-view" class="panel center hidden">
+      <div class="emoji" aria-hidden="true">🔍</div>
+      <h1>ページが見つかりません</h1>
+      <p class="lead">URLが途中で切れている可能性があります。</p>
+      <div class="stack"><a href="/" class="btn btn-block">リンク作成ページへ</a></div>
+    </section>
+
+  </main>
+
+  <script src="/pwa.js" defer></script>
+  <script>
+    window.addEventListener('DOMContentLoaded', () => {
+      const $ = (id) => document.getElementById(id);
+      const path = window.location.pathname.replace(/^\/+|\/+$/g, '');
+
+      const showNotFound = () => {
+        document.title = '404 Not Found';
+        $('notfound-view').classList.remove('hidden');
+      };
+      if (!path || path === '404.html') return showNotFound();
+
+      let url;
+      try {
+        let b64 = path.replace(/-/g, '+').replace(/_/g, '/');
+        while (b64.length % 4) b64 += '=';
+        url = new URL(decodeURIComponent(atob(b64)));
+      } catch (_) { return showNotFound(); }
+
+      if (url.protocol !== 'http:' && url.protocol !== 'https:') return showNotFound();
+
+      document.title = 'リダイレクト確認';
+      $('redirect-view').classList.remove('hidden');
+      $('destHost').textContent = url.hostname;
+      $('destination').textContent = url.href;
+
+      const cautions = [];
+      if (url.hostname.split('.').some((l) => l.startsWith('xn--'))) cautions.push('ドメインに国際化文字（Punycode）が使われています。');
+      if (url.username || url.password) cautions.push('URLにユーザー名やパスワードが含まれています。表示とは別のサイトに接続する手口に使われることがあります。');
+      if (/^\d{1,3}(\.\d{1,3}){3}$/.test(url.hostname)) cautions.push('ドメイン名ではなくIPアドレスへの接続です。');
+      if (url.protocol === 'http:') cautions.push('暗号化されていない通信（http）です。個人情報の入力は避けてください。');
+      if (cautions.length) {
+        const box = $('cautionBox');
+        const head = document.createElement('strong');
+        head.textContent = '注意が必要な点があります';
+        const ul = document.createElement('ul');
+        cautions.forEach((c) => { const li = document.createElement('li'); li.textContent = c; ul.appendChild(li); });
+        box.append(head, ul);
+        box.classList.remove('hidden');
+      }
+
+      $('proceedBtn').addEventListener('click', () => window.location.replace(url.href));
+      $('cancelBtn').addEventListener('click', () => { window.location.href = '/'; });
+      $('cancelBtn').focus({ preventScroll: true });
+    });
+  </script>
+</body>
+</html>
